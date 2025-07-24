@@ -48,44 +48,79 @@ const logRoom = () => {
     })
 }
 
+
+const moveBalls = (room) => {
+    gameStates[room.name] = {
+        ...gameStates[room.name], balls: gameStates[room.name]['balls'].map((item) => {
+            return {
+                pos: {
+                    x: item.pos.x + item.direction.x,
+                    y: item.pos.y + item.direction.y
+                },
+                direction: {
+                    x:
+                        item.pos.x + item.direction.x <= 20 || item.pos.x + item.direction.x >= canvasWidth - ballRadius
+                            ? (item.direction.x * -1) * 1
+                            : item.direction.x * 1,
+                    y:
+                        item.pos.y + item.direction.y <= 20 || item.pos.y + item.direction.y >= canvasHeight - ballRadius
+                            ? (item.direction.y * -1) * 1
+                            : item.direction.y * 1
+                },
+                ballId: item.ballId
+            };
+        })
+    }
+}
 const io = new Server(server, {
     connectionStateRecovery: {
     },
-    cors: { origin: "http://192.168.0.3:5173" }
+    cors: { origin: "https://master.gamehouse-95s.pages.dev" }
 });
 
 app.get("/", (req, res) => {
     res.send("<h1>Hello world</h1>")
 });
 
+/*
+[
+  { pos: { x: 125, y: 354 }, direction: { x: 3, y: -2 } },
+  { pos: { x: 145, y: 40 }, direction: { x: -2, y: -3 } },
+  { pos: { x: 207, y: 456 }, direction: { x: -3, y: 3 } },
+  { pos: { x: 107, y: 258 }, direction: { x: 2, y: 3 } },
+  { pos: { x: 159, y: 58 }, direction: { x: 3, y: 3 } },
+  { pos: { x: 177, y: 124 }, direction: { x: -3, y: 1 } },
+  { pos: { x: 124, y: 346 }, direction: { x: -2, y: 2 } },
+  { pos: { x: 168, y: 70 }, direction: { x: -1, y: -2 } },
+  { pos: { x: 145, y: 164 }, direction: { x: 3, y: -3 } },
+  { pos: { x: 169, y: 106 }, direction: { x: -1, y: -2 } },
+  { pos: { x: 122, y: 22 }, direction: { x: 1, y: -1 } },
+  { pos: { x: 267, y: 345 }, direction: { x: -1, y: 1 } }
+]
+  */
 
 setInterval(() => {
     rooms.forEach((room) => {
         const gameState = gameStates[room.name];
-        gameStates[room.name] = {
-            ...gameStates[room.name], balls: gameStates[room.name]['balls'].map((item) => {
-                return {
-                    pos: {
-                        x: item.pos.x + item.direction.x,
-                        y: item.pos.y + item.direction.y
-                    },
-                    direction: {
-                        x:
-                            item.pos.x + item.direction.x <= 20 || item.pos.x + item.direction.x >= canvasWidth - ballRadius
-                                ? item.direction.x * -1
-                                : item.direction.x,
-                        y:
-                            item.pos.y + item.direction.y <= 20 || item.pos.y + item.direction.y >= canvasHeight - ballRadius
-                                ? item.direction.y * -1
-                                : item.direction.y
-                    }
-                };
-            })
-        }
-        console.log(gameStates[room.name]['balls']);
+        let balls = gameState.balls;
+        let checked = [];
+        console.log("New Loop")
+        balls.forEach((item) => {
+            
+            balls.forEach((itemI) => {
+                if (item !== itemI && !checked.some((checkedItem => checkedItem.ballId === itemI.ballId))) {
+                    console.log(item, itemI);
+                }
+            });
+            checked.push(item);
+        })
+        console.log("Loop end")
+
+        moveBalls(room);
+
         io.to(room.name).emit("state", { game: gameStates[room.name] });
     });
-}, 1000 / 60);
+}, 1000 / 10);
 
 io.on("connection", (socket) => {
     console.log("A new user is connected: ");
@@ -122,7 +157,8 @@ io.on("connection", (socket) => {
                     direction: {
                         x: getRandomDirection(),
                         y: getRandomDirection()
-                    }
+                    },
+                    ballId : parseInt(Math.random() * 1000000000)
                 }))
 
 
