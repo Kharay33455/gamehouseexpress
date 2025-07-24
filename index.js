@@ -120,7 +120,7 @@ setInterval(() => {
 
         io.to(room.name).emit("state", { game: gameStates[room.name] });
     });
-}, 1000 / 10);
+}, 1000 / 60);
 
 io.on("connection", (socket) => {
     console.log("A new user is connected: ");
